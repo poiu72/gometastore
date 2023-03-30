@@ -16,6 +16,7 @@ package hmsclient
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"strconv"
@@ -71,8 +72,8 @@ func (val TableType) String() string {
 }
 
 // Open connection to metastore and return client handle.
-func Open(host string, port int) (*MetastoreClient, error) {
-	print "------->" + host
+func Open(host string, port int, enableSSL bool, certPath string) (*MetastoreClient, error) {
+	fmt.Printf("host--> %s, port-->%d", host, port)
 	server := host
 	portStr := strconv.Itoa(port)
 	if strings.Contains(host, ":") {
@@ -83,10 +84,22 @@ func Open(host string, port int) (*MetastoreClient, error) {
 		server = s
 		portStr = pStr
 	}
+	var socket thrift.TTransport
+	if enableSSL {
+		sslConfig := &tls.Config{
+			InsecureSkipVerify: false, // 不忽略证书验证
+		}
+		socket = thrift.NewTSSLSocketConf(net.JoinHostPort(server, portStr), &thrift.TConfiguration{
+			ConnectTimeout: 30 * time.Second,
+			SocketTimeout:  30 * time.Second,
+			TLSConfig:      sslConfig,
+		})
+	} else {
+		socket = thrift.NewTSocketConf(net.JoinHostPort(server, portStr), &thrift.TConfiguration{
+			ConnectTimeout: 30 * time.Second,
+		})
+	}
 
-	socket := thrift.NewTSocketConf(net.JoinHostPort(server, portStr), &thrift.TConfiguration{
-		ConnectTimeout: 30 * time.Second,
-	})
 	transportFactory := thrift.NewTBufferedTransportFactory(bufferSize)
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
 	transport, err := transportFactory.GetTransport(socket)
