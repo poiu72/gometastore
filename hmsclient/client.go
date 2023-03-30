@@ -17,7 +17,10 @@ package hmsclient
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -71,9 +74,21 @@ func (val TableType) String() string {
 	return tableTypes[val]
 }
 
+func loadRootCA(certPath string) *x509.CertPool {
+	pool := x509.NewCertPool()
+	pem, err := ioutil.ReadFile(certPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !pool.AppendCertsFromPEM(pem) {
+		log.Fatal("Failed to parse root certificate")
+	}
+	return pool
+}
+
 // Open connection to metastore and return client handle.
 func Open(host string, port int, enableSSL bool, certPath string) (*MetastoreClient, error) {
-	fmt.Printf("host--> %s, port-->%d", host, port)
+	fmt.Printf("host--> %s, port-->%d\n", host, port)
 	server := host
 	portStr := strconv.Itoa(port)
 	if strings.Contains(host, ":") {
@@ -87,11 +102,12 @@ func Open(host string, port int, enableSSL bool, certPath string) (*MetastoreCli
 	var socket thrift.TTransport
 	if enableSSL {
 		sslConfig := &tls.Config{
-			InsecureSkipVerify: false, // 不忽略证书验证
+			// InsecureSkipVerify: false, // false: 不忽略证书验证
+			RootCAs: loadRootCA(certPath),
 		}
 		socket = thrift.NewTSSLSocketConf(net.JoinHostPort(server, portStr), &thrift.TConfiguration{
-			ConnectTimeout: 30 * time.Second,
-			SocketTimeout:  30 * time.Second,
+			ConnectTimeout: 5 * time.Second,
+			SocketTimeout:  10 * time.Second,
 			TLSConfig:      sslConfig,
 		})
 	} else {
@@ -130,7 +146,7 @@ func (c *MetastoreClient) Close() {
 
 // Clone metastore client and return a new client with its own connection to metastore.
 func (c *MetastoreClient) Clone() (client *MetastoreClient, err error) {
-	return Open(c.server, c.port)
+	return Open(c.server, c.port, false, "")
 }
 
 // GetAllDatabases returns list of all Hive databases.
