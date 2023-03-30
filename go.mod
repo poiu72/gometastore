@@ -3,6 +3,7 @@ module github.com/poiu72/gometastore
 go 1.19
 
 require (
+	github.com/poiu72/gometastore/hmsclient v1.0.0
 	github.com/akolb1/gometastore v0.0.0-20221218020403-aaa7217ecd00
 	github.com/apache/thrift v0.18.1
 	github.com/colinmarc/hdfs v1.1.3
