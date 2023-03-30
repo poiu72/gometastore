@@ -1,4 +1,4 @@
-module github.com/poiu72/hmsclient
+module github.com/poiu72/gometastore/hmsclient
 
 go 1.19
 
