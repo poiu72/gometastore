@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package hmsclient_test
+package main
 
 import (
 	"fmt"
 	"log"
 
-	"github.com/akolb1/gometastore/hmsclient"
+	"github.com/poiu72/gometastore/hmsclient"
 )
 
 func Example() {

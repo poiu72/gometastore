@@ -72,6 +72,7 @@ func (val TableType) String() string {
 
 // Open connection to metastore and return client handle.
 func Open(host string, port int) (*MetastoreClient, error) {
+	print "------->" + host
 	server := host
 	portStr := strconv.Itoa(port)
 	if strings.Contains(host, ":") {
