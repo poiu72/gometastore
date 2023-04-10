@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	client, err := hmsclient.Open("xxxx", 9083, true, "/Users/gfjia/Downloads/cert.pem")
+	client, err := hmsclient.Open("xxx", 9083, true, false, "")
 	if err != nil {
 		log.Fatal(err)
 	}

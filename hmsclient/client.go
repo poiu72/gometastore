@@ -76,6 +76,7 @@ func (val TableType) String() string {
 
 func loadRootCA(certPath string) *x509.CertPool {
 	pool := x509.NewCertPool()
+	fmt.Println("host--> %s", certPath)
 	pem, err := ioutil.ReadFile(certPath)
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +88,7 @@ func loadRootCA(certPath string) *x509.CertPool {
 }
 
 // Open connection to metastore and return client handle.
-func Open(host string, port int, enableSSL bool, certPath string) (*MetastoreClient, error) {
+func Open(host string, port int, enableSSL bool, checkCertificate bool, certPath string) (*MetastoreClient, error) {
 	fmt.Printf("host--> %s, port-->%d\n", host, port)
 	server := host
 	portStr := strconv.Itoa(port)
@@ -101,10 +102,14 @@ func Open(host string, port int, enableSSL bool, certPath string) (*MetastoreCli
 	}
 	var socket thrift.TTransport
 	if enableSSL {
-		sslConfig := &tls.Config{
-			// InsecureSkipVerify: false, // false: 不忽略证书验证
-			RootCAs: loadRootCA(certPath),
+		sslConfig := &tls.Config{}
+		if checkCertificate {
+			sslConfig = &tls.Config{
+				// InsecureSkipVerify: false, // false: 不忽略证书验证
+				RootCAs: loadRootCA(certPath),
+			}
 		}
+
 		socket = thrift.NewTSSLSocketConf(net.JoinHostPort(server, portStr), &thrift.TConfiguration{
 			ConnectTimeout: 5 * time.Second,
 			SocketTimeout:  10 * time.Second,
@@ -146,7 +151,7 @@ func (c *MetastoreClient) Close() {
 
 // Clone metastore client and return a new client with its own connection to metastore.
 func (c *MetastoreClient) Clone() (client *MetastoreClient, err error) {
-	return Open(c.server, c.port, false, "")
+	return Open(c.server, c.port, false, false, "")
 }
 
 // GetAllDatabases returns list of all Hive databases.
